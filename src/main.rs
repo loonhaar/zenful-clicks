@@ -5,7 +5,7 @@ use ratatui::{
 	layout::{Constraint, HorizontalAlignment, Layout, Rect, Spacing},
 	style::{Color, Stylize},
 	symbols::merge::MergeStrategy,
-	widgets::{Block, BorderType, Clear, Paragraph},
+	widgets::{Block, BorderType, Clear, Padding, Paragraph},
 };
 
 fn main() -> Result<()> {
@@ -170,13 +170,35 @@ impl AppState {
 	fn add_toggle_form(&mut self, frame: &mut Frame, popup_block: Block, centered_area: Rect) {
 		let popup = popup_block.title(" Add a new toggle ");
 
-		let key_p = Paragraph::new("Set key: ").block(popup);
-		frame.render_widget(key_p, centered_area);
+		let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+			.split(popup.inner(centered_area));
+
+		frame.render_widget(popup, centered_area);
+
+		let key_p =
+			Paragraph::new("Set key: ").block(Block::default().padding(Padding::uniform(1))); //GG
+
+		let bottom = Layout::horizontal([
+			Constraint::Fill(1),
+			Constraint::Length(12), // TODO: magic numbers
+			Constraint::Length(15),
+			Constraint::Fill(1),
+		])
+		.split(inner_area[1]);
+
+		let x = Paragraph::new("[x] Cancel  ")
+			.fg(Color::Red)
+			.alignment(HorizontalAlignment::Right);
+		let enter = Paragraph::new("[Enter] Confirm").fg(Color::Green);
+
+		frame.render_widget(key_p, inner_area[0]);
+		frame.render_widget(x, bottom[1]);
+		frame.render_widget(enter, bottom[2]);
 	}
 
 	fn add_click_form(&mut self, frame: &mut Frame, popup_block: Block, centered_area: Rect) {
 		let popup = popup_block.title(" Add a new click ");
-		//let inner_area = popup.inner(centered_area);
+
 		let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
 			.split(popup.inner(centered_area));
 
