@@ -9,8 +9,12 @@ mod ui;
 
 use app::AppState;
 
+use crate::app::{Click, Toggle};
+
 fn main() -> Result<()> {
 	let mut app = AppState::default();
+	// NOTE: Testing, remove the next line and function
+	prep(&mut app);
 	color_eyre::install()?;
 
 	let terminal = ratatui::init();
@@ -33,4 +37,35 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 	}
 
 	Ok(())
+}
+
+fn prep(app: &mut AppState) {
+	app.toggles.push(Toggle {
+		key: String::from("Test1"),
+		active: false,
+	});
+	app.toggles.push(Toggle {
+		key: String::from("Test2"),
+		active: true,
+	});
+	app.toggles.push(Toggle {
+		key: String::from("Test3"),
+		active: false,
+	});
+
+	app.clicks.push(Click {
+		key: String::from("Test3"),
+		interval: 11,
+		active: true,
+	});
+	app.clicks.push(Click {
+		key: String::from("Test3"),
+		interval: 20,
+		active: false,
+	});
+	app.clicks.push(Click {
+		key: String::from("Test3"),
+		interval: 100,
+		active: true,
+	});
 }

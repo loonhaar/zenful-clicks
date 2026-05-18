@@ -6,6 +6,7 @@ use ratatui::{
 	widgets::{Block, BorderType, Clear},
 };
 
+mod list;
 mod popups;
 mod tabs;
 
@@ -20,11 +21,11 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 
 	frame.render_widget(&outline, frame.area());
 
-	// Layouts
 	let app_area = outline.inner(frame.area());
 	let v_constraints = [Constraint::Length(3), Constraint::Min(3)];
 	let outer_layout = Layout::vertical(v_constraints)
 		.spacing(Spacing::Overlap(1))
+		.horizontal_margin(1)
 		.split(app_area);
 
 	tabs::render_tabs(app, frame, outer_layout[0]);
@@ -34,7 +35,9 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 		.fg(Color::Yellow)
 		.merge_borders(MergeStrategy::Fuzzy);
 
-	frame.render_widget(main_pane, outer_layout[1]);
+	frame.render_widget(&main_pane, outer_layout[1]);
+
+	list::render_list(app, frame, main_pane.inner(outer_layout[1]));
 
 	if app.show_add_form {
 		let popup_block = Block::bordered()
