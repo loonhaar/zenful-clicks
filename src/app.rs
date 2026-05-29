@@ -49,6 +49,10 @@ impl AppState {
 
 		match code {
 			KeyCode::Char('Q') => true,
+			KeyCode::Char('H') => {
+				// TODO: display a help popup that explains keybinds
+				false
+			}
 			KeyCode::Char('h') | KeyCode::Char('t') => {
 				self.focus_pane = Pane::Toggles;
 				false
@@ -65,11 +69,15 @@ impl AppState {
 				self.focus_pane = Pane::Clicks;
 				false
 			}
-			KeyCode::Char('n') => {
+			KeyCode::Char('a') => {
 				self.show_add_form = true;
 				self.form_field = FormField::Keys;
 				self.form_keys.clear();
 				self.form_interval.clear();
+				false
+			}
+			KeyCode::Char('D') => {
+				self.delete_selected();
 				false
 			}
 			KeyCode::Enter => {
@@ -163,6 +171,38 @@ impl AppState {
 				let last = self.clicks.len().saturating_sub(1);
 				self.list_state.borrow_mut().select(Some(last));
 				self.discard_form();
+			}
+		}
+	}
+
+	fn delete_selected(&mut self) {
+		let index = self.list_state.borrow().selected();
+		if let Some(i) = index {
+			match self.focus_pane {
+				Pane::Toggles => {
+					if i < self.toggles.len() {
+						self.toggles.remove(i);
+						let len = self.toggles.len();
+						if len == 0 {
+							self.list_state.borrow_mut().select(None);
+						} else {
+							let new = if i >= len { len - 1 } else { i };
+							self.list_state.borrow_mut().select(Some(new));
+						}
+					}
+				}
+				Pane::Clicks => {
+					if i < self.clicks.len() {
+						self.clicks.remove(i);
+						let len = self.clicks.len();
+						if len == 0 {
+							self.list_state.borrow_mut().select(None);
+						} else {
+							let new = if i >= len { len - 1 } else { i };
+							self.list_state.borrow_mut().select(Some(new));
+						}
+					}
+				}
 			}
 		}
 	}
