@@ -45,16 +45,21 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 			.title_alignment(HorizontalAlignment::Center)
 			.border_style(Color::Magenta);
 
+		let popup_height = match app.focus_pane {
+			Pane::Toggles => 7,
+			Pane::Clicks => 8,
+		};
+
 		let centered_area = frame
 			.area()
-			.centered(Constraint::Length(45), Constraint::Length(7));
+			.centered(Constraint::Length(45), Constraint::Length(popup_height));
 
 		// Clear the background for the popup
 		frame.render_widget(Clear, centered_area);
 
 		match app.focus_pane {
-			Pane::Toggles => popups::render_toggle_form(frame, popup_block, centered_area),
-			Pane::Clicks => popups::render_click_form(frame, popup_block, centered_area),
+			Pane::Toggles => popups::render_toggle_form(frame, popup_block, centered_area, app),
+			Pane::Clicks => popups::render_click_form(frame, popup_block, centered_area, app),
 		}
 	}
 }
