@@ -61,5 +61,15 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 			Pane::Toggles => popups::render_toggle_form(frame, popup_block, centered_area, app),
 			Pane::Clicks => popups::render_click_form(frame, popup_block, centered_area, app),
 		}
+	} else if app.show_delete_confirm {
+		let popup_block = Block::bordered()
+			.border_type(BorderType::Rounded)
+			.title_alignment(HorizontalAlignment::Center)
+			.border_style(Color::Red);
+
+		let centered_area = frame.area().centered(Constraint::Length(42), Constraint::Length(6));
+
+		frame.render_widget(Clear, centered_area);
+		popups::render_delete_confirm(frame, popup_block, centered_area, app);
 	}
 }

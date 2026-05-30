@@ -95,6 +95,39 @@ pub fn render_click_form(
 	frame.render_widget(confirm, bottom[2]);
 }
 
+pub fn render_delete_confirm(
+	frame: &mut Frame,
+	popup_block: Block,
+	centered_area: Rect,
+	app: &AppState,
+) {
+	let popup = popup_block.title(" Delete selected ");
+	let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+		.split(popup.inner(centered_area));
+
+	frame.render_widget(popup, centered_area);
+
+	let message = match app.focus_pane {
+		crate::app::Pane::Toggles => "This will delete the selected toggle.",
+		crate::app::Pane::Clicks => "This will delete the selected click.",
+	};
+
+	let body = Paragraph::new(message)
+		.fg(Color::White)
+		.alignment(HorizontalAlignment::Center)
+		.block(Block::default().padding(Padding::uniform(1)));
+	let bottom = layout_popup_buttons(inner_area[1]);
+
+	let cancel = Paragraph::new("[Esc] Cancel   ")
+		.fg(Color::Red)
+		.alignment(HorizontalAlignment::Right);
+	let confirm = Paragraph::new("[Enter] Delete").fg(Color::Green);
+
+	frame.render_widget(body, inner_area[0]);
+	frame.render_widget(cancel, bottom[1]);
+	frame.render_widget(confirm, bottom[2]);
+}
+
 fn layout_popup_buttons(area: Rect) -> Rc<[Rect]> {
 	Layout::horizontal([
 		Constraint::Fill(1),

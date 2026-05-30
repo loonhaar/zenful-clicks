@@ -1,4 +1,6 @@
 use std::cell::RefCell;
+use std::thread;
+use std::time::Duration;
 
 use ratatui::{crossterm::event::KeyCode, widgets::ListState};
 
@@ -16,16 +18,18 @@ pub enum Pane {
 	Clicks,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct AppState {
 	pub focus_pane: Pane,
 	pub show_add_form: bool,
+	pub show_delete_confirm: bool,
 	pub form_field: FormField,
 	pub form_keys: String,
 	pub form_interval: String,
 	pub toggles: Vec<Toggle>,
 	pub clicks: Vec<Click>,
 	pub list_state: RefCell<ListState>,
+	pub toggle_controller: crate::os_input::ToggleController,
 }
 
 #[derive(Debug)]
@@ -41,10 +45,31 @@ pub struct Click {
 	pub active: bool,
 }
 
+impl Default for AppState {
+	fn default() -> Self {
+		Self {
+			focus_pane: Pane::Toggles,
+			show_add_form: false,
+			show_delete_confirm: false,
+			form_field: FormField::Keys,
+			form_keys: String::new(),
+			form_interval: String::new(),
+			toggles: Vec::new(),
+			clicks: Vec::new(),
+			list_state: RefCell::new(ListState::default()),
+			toggle_controller: crate::os_input::ToggleController::new(),
+		}
+	}
+}
+
 impl AppState {
 	pub fn handle_key(&mut self, code: KeyCode) -> bool {
 		if self.show_add_form {
 			return self.handle_form_key(code);
+		}
+
+		if self.show_delete_confirm {
+			return self.handle_delete_confirm_key(code);
 		}
 
 		match code {
@@ -77,12 +102,27 @@ impl AppState {
 				false
 			}
 			KeyCode::Char('D') => {
-				self.delete_selected();
+				self.request_delete_selected();
 				false
 			}
 			KeyCode::Enter => {
 				self.toggle_status();
 
+				false
+			}
+			_ => false,
+		}
+	}
+
+	fn handle_delete_confirm_key(&mut self, code: KeyCode) -> bool {
+		match code {
+			KeyCode::Esc => {
+				self.show_delete_confirm = false;
+				false
+			}
+			KeyCode::Enter => {
+				self.delete_selected();
+				self.show_delete_confirm = false;
 				false
 			}
 			_ => false,
@@ -181,6 +221,8 @@ impl AppState {
 			match self.focus_pane {
 				Pane::Toggles => {
 					if i < self.toggles.len() {
+						self.toggle_controller.stop_toggle(i);
+
 						self.toggles.remove(i);
 						let len = self.toggles.len();
 						if len == 0 {
@@ -189,6 +231,8 @@ impl AppState {
 							let new = if i >= len { len - 1 } else { i };
 							self.list_state.borrow_mut().select(Some(new));
 						}
+
+						self.toggle_controller.remove_index(i);
 					}
 				}
 				Pane::Clicks => {
@@ -207,6 +251,20 @@ impl AppState {
 		}
 	}
 
+	pub fn request_delete_selected(&mut self) {
+		if self.list_state.borrow().selected().is_some() {
+			self.show_delete_confirm = true;
+		}
+	}
+
+	pub fn pause_all_toggles(&mut self) {
+		self.toggle_controller.pause_all();
+	}
+
+	pub fn resume_all_toggles(&mut self) {
+		self.toggle_controller.resume_all(&self.toggles);
+	}
+
 	fn toggle_status(&mut self) {
 		let index = self.list_state.borrow().selected();
 
@@ -214,7 +272,14 @@ impl AppState {
 			match self.focus_pane {
 				Pane::Toggles => {
 					if let Some(t) = self.toggles.get_mut(i) {
-						t.active = !t.active
+						t.active = !t.active;
+
+						if t.active {
+							let keys = t.keys.clone();
+							self.toggle_controller.start_toggle(i, keys);
+						} else {
+							self.toggle_controller.stop_toggle(i);
+						}
 					}
 				}
 				Pane::Clicks => {
@@ -224,5 +289,12 @@ impl AppState {
 				}
 			}
 		}
+	}
+}
+
+impl Drop for AppState {
+	fn drop(&mut self) {
+		self.toggle_controller.shutdown();
+		thread::sleep(Duration::from_millis(100));
 	}
 }
