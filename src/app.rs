@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::Arc;
 use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
@@ -261,14 +261,6 @@ impl AppState {
 		}
 	}
 
-	pub fn pause_all_toggles(&mut self) {
-		self.toggle_controller.pause_all();
-	}
-
-	pub fn resume_all_toggles(&mut self) {
-		self.toggle_controller.resume_all(&self.toggles);
-	}
-
 	fn toggle_status(&mut self) {
 		let index = self.list_state.borrow().selected();
 
@@ -280,7 +272,8 @@ impl AppState {
 
 						if t.active {
 							let keys = t.keys.clone();
-							self.toggle_controller.start_toggle(i, keys);
+							self.toggle_controller
+								.start_toggle(i, keys, &self.focus_signal);
 						} else {
 							self.toggle_controller.stop_toggle(i);
 						}

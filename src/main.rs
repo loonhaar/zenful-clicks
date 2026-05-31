@@ -6,7 +6,7 @@ use ratatui::{
 		event::{self, EnableFocusChange, Event},
 	},
 };
-use std::{io::stdout, sync::atomic::Ordering};
+use std::io::stdout;
 
 mod app;
 mod os_input;
@@ -40,23 +40,16 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 				}
 			}
 			Event::FocusLost => {
-				{
-					let (lock, _) = &*app.focus_signal;
-					let mut focused = lock.lock().unwrap();
-					*focused = false;
-				}
-
-				app.pause_all_toggles();
+				let (lock, cvar) = &*app.focus_signal;
+				let mut focused = lock.lock().unwrap();
+				*focused = false;
+				cvar.notify_all();
 			}
 			Event::FocusGained => {
-				{
-					let (lock, cvar) = &*app.focus_signal;
-					let mut focused = lock.lock().unwrap();
-					*focused = true;
-					cvar.notify_all();
-				}
-
-				app.resume_all_toggles();
+				let (lock, cvar) = &*app.focus_signal;
+				let mut focused = lock.lock().unwrap();
+				*focused = true;
+				cvar.notify_all();
 			}
 			_ => {}
 		}
