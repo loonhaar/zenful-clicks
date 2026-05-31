@@ -1,10 +1,11 @@
 use ratatui::{
 	Frame,
 	layout::{Constraint, HorizontalAlignment, Layout, Spacing},
-	style::{Color, Stylize},
+	style::Color,
 	symbols::merge::MergeStrategy,
 	widgets::{Block, BorderType, Clear},
 };
+use std::sync::atomic::Ordering;
 
 mod list;
 mod popups;
@@ -13,10 +14,16 @@ mod tabs;
 use crate::app::{AppState, Pane};
 
 pub fn render(frame: &mut Frame, app: &AppState) {
+	let (outline_color, title) = if app.is_focused.load(Ordering::SeqCst) {
+		(Color::White, " Zenful Clicks [PAUSE] ")
+	} else {
+		(Color::Green, " Zenful Clicks ")
+	};
+
 	let outline = Block::bordered()
 		.border_type(BorderType::Rounded)
-		.fg(Color::Green)
-		.title(" Zenful Clicks ")
+		.border_style(outline_color)
+		.title(title)
 		.title_alignment(HorizontalAlignment::Center);
 
 	frame.render_widget(&outline, frame.area());
@@ -32,7 +39,7 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 
 	let main_pane = Block::bordered()
 		.border_type(BorderType::Rounded)
-		.fg(Color::Yellow)
+		.border_style(Color::Yellow)
 		.merge_borders(MergeStrategy::Fuzzy);
 
 	frame.render_widget(&main_pane, outer_layout[1]);
@@ -67,7 +74,9 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 			.title_alignment(HorizontalAlignment::Center)
 			.border_style(Color::Red);
 
-		let centered_area = frame.area().centered(Constraint::Length(42), Constraint::Length(6));
+		let centered_area = frame
+			.area()
+			.centered(Constraint::Length(42), Constraint::Length(6));
 
 		frame.render_widget(Clear, centered_area);
 		popups::render_delete_confirm(frame, popup_block, centered_area, app);

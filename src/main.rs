@@ -1,12 +1,16 @@
 use color_eyre::eyre::{Ok, Result};
 use ratatui::{
 	DefaultTerminal,
-	crossterm::event::{self, Event},
+	crossterm::{
+		ExecutableCommand,
+		event::{self, EnableFocusChange, Event},
+	},
 };
+use std::{io::stdout, sync::atomic::Ordering};
 
 mod app;
-mod ui;
 mod os_input;
+mod ui;
 
 use app::AppState;
 
@@ -16,6 +20,9 @@ fn main() -> Result<()> {
 	color_eyre::install()?;
 
 	let terminal = ratatui::init();
+
+	let _ = stdout().execute(EnableFocusChange);
+
 	let result = run(terminal, &mut app);
 
 	ratatui::restore();
@@ -33,9 +40,11 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 				}
 			}
 			Event::FocusLost => {
+				app.is_focused.store(false, Ordering::SeqCst);
 				app.pause_all_toggles();
 			}
 			Event::FocusGained => {
+				app.is_focused.store(true, Ordering::SeqCst);
 				app.resume_all_toggles();
 			}
 			_ => {}
