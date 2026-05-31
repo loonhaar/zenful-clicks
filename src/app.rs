@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::sync::{Arc, atomic::AtomicBool};
+use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
 
@@ -22,7 +23,7 @@ pub enum Pane {
 #[derive(Debug)]
 pub struct AppState {
 	pub focus_pane: Pane,
-	pub is_focused: Arc<AtomicBool>,
+	pub focus_signal: Arc<(Mutex<bool>, Condvar)>,
 	pub show_add_form: bool,
 	pub show_delete_confirm: bool,
 	pub form_field: FormField,
@@ -51,7 +52,7 @@ impl Default for AppState {
 	fn default() -> Self {
 		Self {
 			focus_pane: Pane::Toggles,
-			is_focused: Arc::new(AtomicBool::new(true)),
+			focus_signal: Arc::new((Mutex::new(true), Condvar::new())),
 			show_add_form: false,
 			show_delete_confirm: false,
 			form_field: FormField::Keys,

@@ -40,11 +40,22 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 				}
 			}
 			Event::FocusLost => {
-				app.is_focused.store(false, Ordering::SeqCst);
+				{
+					let (lock, _) = &*app.focus_signal;
+					let mut focused = lock.lock().unwrap();
+					*focused = false;
+				}
+
 				app.pause_all_toggles();
 			}
 			Event::FocusGained => {
-				app.is_focused.store(true, Ordering::SeqCst);
+				{
+					let (lock, cvar) = &*app.focus_signal;
+					let mut focused = lock.lock().unwrap();
+					*focused = true;
+					cvar.notify_all();
+				}
+
 				app.resume_all_toggles();
 			}
 			_ => {}

@@ -5,7 +5,6 @@ use ratatui::{
 	symbols::merge::MergeStrategy,
 	widgets::{Block, BorderType, Clear},
 };
-use std::sync::atomic::Ordering;
 
 mod list;
 mod popups;
@@ -14,7 +13,10 @@ mod tabs;
 use crate::app::{AppState, Pane};
 
 pub fn render(frame: &mut Frame, app: &AppState) {
-	let (outline_color, title) = if app.is_focused.load(Ordering::SeqCst) {
+	let (lock, _cvar) = &*app.focus_signal;
+	let is_focused = *lock.lock().unwrap();
+
+	let (outline_color, title) = if is_focused {
 		(Color::White, " Zenful Clicks [PAUSE] ")
 	} else {
 		(Color::Green, " Zenful Clicks ")
