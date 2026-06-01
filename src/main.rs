@@ -1,10 +1,17 @@
 use color_eyre::eyre::{Ok, Result};
 use ratatui::{
-	DefaultTerminal,
-	crossterm::{
-		ExecutableCommand,
-		event::{self, EnableFocusChange, Event},
-	},
+		DefaultTerminal,
+		crossterm::{
+			ExecutableCommand,
+			event::{
+				self,
+				EnableFocusChange,
+				Event,
+				PushKeyboardEnhancementFlags,
+				PopKeyboardEnhancementFlags,
+				KeyboardEnhancementFlags,
+			},
+		},
 };
 use std::{
 	io::stdout,
@@ -27,8 +34,13 @@ fn main() -> Result<()> {
 
 	let _ = stdout().execute(EnableFocusChange);
 
+	let flags = KeyboardEnhancementFlags::DISAMBIGUATE_ESCAPE_CODES
+		| KeyboardEnhancementFlags::REPORT_ALL_KEYS_AS_ESCAPE_CODES;
+	let _ = stdout().execute(PushKeyboardEnhancementFlags(flags));
+
 	let result = run(terminal, &mut app);
 
+	let _ = stdout().execute(PopKeyboardEnhancementFlags);
 	ratatui::restore();
 	result
 }
@@ -48,7 +60,7 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 					continue;
 				}
 
-				if app.handle_key(key.code) {
+				if app.handle_key(key) {
 					break;
 				}
 			}

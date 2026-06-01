@@ -4,7 +4,10 @@ use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use ratatui::{crossterm::event::KeyCode, widgets::ListState};
+use ratatui::{
+	crossterm::event::{KeyCode, KeyEvent, KeyModifiers, ModifierKeyCode},
+	widgets::ListState,
+};
 
 #[derive(Debug, Default, PartialEq, Clone, Copy)]
 pub enum FormField {
@@ -69,9 +72,12 @@ impl Default for AppState {
 }
 
 impl AppState {
-	pub fn handle_key(&mut self, code: KeyCode) -> bool {
+	pub fn handle_key(&mut self, event: KeyEvent) -> bool {
+		let code = event.code;
+		let modifiers = event.modifiers;
+
 		if self.show_add_form {
-			return self.handle_form_key(code);
+			return self.handle_form_key(event);
 		}
 
 		if self.show_delete_confirm {
@@ -81,10 +87,13 @@ impl AppState {
 		let mut quit_application = false;
 
 		match code {
-			KeyCode::Char('Q') => {
+			KeyCode::Char('q') if modifiers.contains(KeyModifiers::SHIFT) => {
 				quit_application = true;
 			}
-			KeyCode::Char('H') => {
+			KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
+				quit_application = true;
+			}
+			KeyCode::Char('h') if modifiers.contains(KeyModifiers::SHIFT) => {
 				// TODO: display a help popup that explains keybinds
 			}
 			KeyCode::Char('h') | KeyCode::Char('t') => {
@@ -105,7 +114,7 @@ impl AppState {
 				self.form_keys.clear();
 				self.form_interval.clear();
 			}
-			KeyCode::Char('D') => {
+			KeyCode::Char('d') if modifiers.contains(KeyModifiers::SHIFT) => {
 				self.request_delete_selected();
 			}
 			KeyCode::Enter => {
@@ -133,7 +142,12 @@ impl AppState {
 		}
 	}
 
-	fn handle_form_key(&mut self, code: KeyCode) -> bool {
+	fn handle_form_key(&mut self, event: KeyEvent) -> bool {
+		let code = event.code;
+		let modifiers = event.modifiers;
+
+
+
 		match code {
 			KeyCode::Esc => {
 				self.discard_form();
@@ -163,6 +177,26 @@ impl AppState {
 				}
 				false
 			}
+			KeyCode::Null if self.form_field == FormField::Keys => {
+				if let Some(modifier_combo) = format_modifier_only(modifiers) {
+					self.form_keys.push_str(&modifier_combo);
+				}
+				false
+			}
+			KeyCode::Modifier(m) if self.form_field == FormField::Keys => {
+				if let Some(tok) = modifier_token_from_modifier_keycode(m) {
+					self.form_keys.push_str(&tok);
+				}
+				false
+			}
+			KeyCode::Char(ch) if self.form_field == FormField::Keys => {
+				if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
+					self.form_keys.push_str(&modifier_combo);
+				} else {
+					self.form_keys.push(ch);
+				}
+				false
+			}
 			KeyCode::Char(ch) => {
 				match self.form_field {
 					FormField::Keys => self.form_keys.push(ch),
@@ -186,7 +220,7 @@ impl AppState {
 	}
 
 	fn submit_form(&mut self) {
-		let keys = self.form_keys.trim().to_string();
+		let keys = normalize_key_combo(self.form_keys.trim());
 
 		if keys.is_empty() {
 			return;
@@ -286,6 +320,113 @@ impl AppState {
 				}
 			}
 		}
+	}
+}
+
+fn normalize_key_combo(raw: &str) -> String {
+	raw.split('+')
+		.filter_map(|part| {
+			let token = part.trim();
+			if token.is_empty() {
+				return None;
+			}
+
+			Some(format_key_token(token))
+		})
+		.collect::<Vec<String>>()
+		.join("+")
+}
+
+fn format_key_token(token: &str) -> String {
+	if let Some(modifier) = normalize_modifier_name(token) {
+		return format!("<{}>", modifier);
+	}
+
+	if token.chars().count() == 1 {
+		let ch = token.chars().next().unwrap();
+		if ch.is_ascii_alphabetic() {
+			return ch.to_ascii_uppercase().to_string();
+		}
+	}
+
+	token.to_string()
+}
+
+fn normalize_modifier_name(token: &str) -> Option<&'static str> {
+	let name = token.trim_matches(|c| c == '<' || c == '>').to_lowercase();
+
+	match name.as_str() {
+		"shift" => Some("Shift"),
+		"ctrl" | "control" => Some("Ctrl"),
+		"alt" => Some("Alt"),
+		"meta" | "cmd" | "super" | "win" | "windows" => Some("Meta"),
+		_ => None,
+	}
+}
+
+fn format_modifier_combo(modifiers: KeyModifiers, ch: char) -> Option<String> {
+	if modifiers.is_empty() {
+		return None;
+	}
+
+	let mut parts = modifier_tokens(modifiers);
+
+	if parts.is_empty() {
+		return None;
+	}
+
+	let key = if ch.is_ascii_alphabetic() {
+		ch.to_ascii_uppercase().to_string()
+	} else {
+		ch.to_string()
+	};
+
+	parts.push(key);
+	Some(parts.join("+"))
+}
+
+fn format_modifier_only(modifiers: KeyModifiers) -> Option<String> {
+	if modifiers.is_empty() {
+		return None;
+	}
+
+	let parts = modifier_tokens(modifiers);
+
+	if parts.is_empty() {
+		return None;
+	}
+
+	Some(parts.join("+"))
+}
+
+fn modifier_tokens(modifiers: KeyModifiers) -> Vec<String> {
+	let mut parts = Vec::new();
+
+	if modifiers.contains(KeyModifiers::SHIFT) {
+		parts.push(String::from("<Shift>"));
+	}
+	if modifiers.contains(KeyModifiers::CONTROL) {
+		parts.push(String::from("<Ctrl>"));
+	}
+	if modifiers.contains(KeyModifiers::ALT) {
+		parts.push(String::from("<Alt>"));
+	}
+	if modifiers.contains(KeyModifiers::SUPER) {
+		parts.push(String::from("<Meta>"));
+	}
+
+	parts
+}
+
+fn modifier_token_from_modifier_keycode(m: ModifierKeyCode) -> Option<String> {
+	use ModifierKeyCode::*;
+
+	match m {
+		LeftShift | RightShift => Some(String::from("<Shift>")),
+		LeftControl | RightControl => Some(String::from("<Ctrl>")),
+		LeftAlt | RightAlt => Some(String::from("<Alt>")),
+		LeftSuper | RightSuper => Some(String::from("<Meta>")),
+		_ => None,
 	}
 }
 

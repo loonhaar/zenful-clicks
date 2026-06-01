@@ -72,14 +72,11 @@ fn simulate_key_hold(
 ) {
 	use enigo::{Direction, Enigo, Keyboard, Settings};
 
-	let (modifiers, key_char) = parse_key_string(keys);
-	let modifier_keys = get_modifier_keys(&modifiers);
+	let (modifier_keys, main_key) = parse_key_string(keys);
 
 	let Ok(mut enigo) = Enigo::new(&Settings::default()) else {
 		return;
 	};
-
-	let main_key = char_to_enigo_key(key_char);
 
 	let mut keys_pressed = false;
 
@@ -96,12 +93,7 @@ fn simulate_key_hold(
 
 			if *focused {
 				if keys_pressed {
-					if let Some(k) = main_key {
-						let _ = enigo.key(k, Direction::Release);
-					}
-					for &m in modifier_keys.iter().rev() {
-						let _ = enigo.key(m, Direction::Release);
-					}
+					release_keys(&mut enigo, &modifier_keys, main_key);
 					keys_pressed = false;
 				}
 
@@ -125,41 +117,69 @@ fn simulate_key_hold(
 	}
 
 	if keys_pressed {
-		if let Some(k) = main_key {
-			let _ = enigo.key(k, Direction::Release);
-		}
-		for &m in modifier_keys.iter().rev() {
-			let _ = enigo.key(m, Direction::Release);
-		}
+		release_keys(&mut enigo, &modifier_keys, main_key);
 	}
 }
 
-fn parse_key_string(keys: &str) -> (Vec<&str>, char) {
-	let parts: Vec<&str> = keys.split('+').collect();
+fn parse_key_string(keys: &str) -> (Vec<enigo::Key>, Option<enigo::Key>) {
+	let mut modifiers = Vec::new();
+	let mut main_key = None;
 
-	if parts.is_empty() {
-		return (vec![], ' ');
+	for part in keys.split('+') {
+		let token = part.trim();
+		if token.is_empty() {
+			continue;
+		}
+
+		if let Some(modifier) = get_modifier_key(token) {
+			modifiers.push(modifier);
+			continue;
+		}
+
+		if main_key.is_none() {
+			main_key = parse_main_key(token);
+		}
 	}
 
-	let key_char = parts[parts.len() - 1].chars().next().unwrap_or(' ');
-	let modifiers = parts[..parts.len() - 1].to_vec();
-
-	(modifiers, key_char)
+	(modifiers, main_key)
 }
 
-fn get_modifier_keys(modifiers: &[&str]) -> Vec<enigo::Key> {
+fn get_modifier_key(token: &str) -> Option<enigo::Key> {
 	use enigo::Key;
 
-	modifiers
-		.iter()
-		.filter_map(|&m| match m.to_lowercase().as_str() {
-			"shift" => Some(Key::Shift),
-			"ctrl" | "control" => Some(Key::Control),
-			"alt" => Some(Key::Alt),
-			"meta" | "cmd" | "super" => Some(Key::Meta),
-			_ => None,
-		})
-		.collect()
+	match token.trim_matches(|c| c == '<' || c == '>').to_lowercase().as_str() {
+		"shift" => Some(Key::Shift),
+		"ctrl" | "control" => Some(Key::Control),
+		"alt" => Some(Key::Alt),
+		"meta" | "cmd" | "super" | "win" | "windows" => Some(Key::Meta),
+		_ => None,
+	}
+}
+
+fn parse_main_key(token: &str) -> Option<enigo::Key> {
+	use enigo::Key;
+
+	let lower = token.trim_matches(|c| c == '<' || c == '>').to_lowercase();
+
+	match lower.as_str() {
+		"space" => Some(Key::Space),
+		"tab" => Some(Key::Tab),
+		"enter" | "return" => Some(Key::Return),
+		"esc" | "escape" => None,
+		_ if token.chars().count() == 1 => token.chars().next().and_then(char_to_enigo_key),
+		_ => None,
+	}
+}
+
+fn release_keys(enigo: &mut enigo::Enigo, modifier_keys: &[enigo::Key], main_key: Option<enigo::Key>) {
+	use enigo::{Direction, Keyboard};
+
+	if let Some(k) = main_key {
+		let _ = enigo.key(k, Direction::Release);
+	}
+	for &m in modifier_keys.iter().rev() {
+		let _ = enigo.key(m, Direction::Release);
+	}
 }
 
 fn char_to_enigo_key(ch: char) -> Option<enigo::Key> {
