@@ -14,6 +14,7 @@ pub enum FormField {
 	#[default]
 	Keys,
 	Interval,
+	Activate,
 }
 
 #[derive(Debug, Default, PartialEq, Clone, Copy)]
@@ -33,6 +34,7 @@ pub struct AppState {
 	pub form_field: FormField,
 	pub form_keys: String,
 	pub form_interval: String,
+	pub form_activate: String,
 	pub toggles: Vec<Toggle>,
 	pub clicks: Vec<Click>,
 	pub list_state: RefCell<ListState>,
@@ -48,6 +50,7 @@ pub struct Toggle {
 #[derive(Debug)]
 pub struct Click {
 	pub keys: String,
+	pub activate: String,
 	pub interval: u32,
 	pub active: bool,
 }
@@ -63,6 +66,7 @@ impl Default for AppState {
 			form_field: FormField::Keys,
 			form_keys: String::new(),
 			form_interval: String::new(),
+			form_activate: String::new(),
 			toggles: Vec::new(),
 			clicks: Vec::new(),
 			list_state: RefCell::new(ListState::default()),
@@ -113,6 +117,7 @@ impl AppState {
 				self.form_field = FormField::Keys;
 				self.form_keys.clear();
 				self.form_interval.clear();
+				self.form_activate.clear();
 			}
 			KeyCode::Char('d') if modifiers.contains(KeyModifiers::SHIFT) => {
 				self.request_delete_selected();
@@ -146,8 +151,6 @@ impl AppState {
 		let code = event.code;
 		let modifiers = event.modifiers;
 
-
-
 		match code {
 			KeyCode::Esc => {
 				self.discard_form();
@@ -161,7 +164,8 @@ impl AppState {
 				if self.active_pane == Pane::Clicks {
 					self.form_field = match self.form_field {
 						FormField::Keys => FormField::Interval,
-						FormField::Interval => FormField::Keys,
+						FormField::Interval => FormField::Activate,
+						FormField::Activate => FormField::Keys,
 					};
 				}
 				false
@@ -174,18 +178,33 @@ impl AppState {
 					FormField::Interval => {
 						self.form_interval.pop();
 					}
+					FormField::Activate => {
+						self.form_activate.pop();
+					}
 				}
 				false
 			}
-			KeyCode::Null if self.form_field == FormField::Keys => {
-				if let Some(modifier_combo) = format_modifier_only(modifiers) {
-					self.form_keys.push_str(&modifier_combo);
+			KeyCode::Null => {
+				if self.form_field == FormField::Keys {
+					if let Some(modifier_combo) = format_modifier_only(modifiers) {
+						self.form_keys.push_str(&modifier_combo);
+					}
+				} else if self.form_field == FormField::Activate {
+					if let Some(modifier_combo) = format_modifier_only(modifiers) {
+						self.form_activate.push_str(&modifier_combo);
+					}
 				}
 				false
 			}
-			KeyCode::Modifier(m) if self.form_field == FormField::Keys => {
-				if let Some(tok) = modifier_token_from_modifier_keycode(m) {
-					self.form_keys.push_str(&tok);
+			KeyCode::Modifier(m) => {
+				if self.form_field == FormField::Keys {
+					if let Some(tok) = modifier_token_from_modifier_keycode(m) {
+						self.form_keys.push_str(&tok);
+					}
+				} else if self.form_field == FormField::Activate {
+					if let Some(tok) = modifier_token_from_modifier_keycode(m) {
+						self.form_activate.push_str(&tok);
+					}
 				}
 				false
 			}
@@ -199,10 +218,23 @@ impl AppState {
 			}
 			KeyCode::Char(ch) => {
 				match self.form_field {
-					FormField::Keys => self.form_keys.push(ch),
+					FormField::Keys => {
+						if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
+							self.form_keys.push_str(&modifier_combo);
+						} else {
+							self.form_keys.push(ch);
+						}
+					}
 					FormField::Interval => {
 						if ch.is_ascii_digit() {
 							self.form_interval.push(ch);
+						}
+					}
+					FormField::Activate => {
+						if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
+							self.form_activate.push_str(&modifier_combo);
+						} else {
+							self.form_activate.push(ch);
 						}
 					}
 				}
@@ -217,6 +249,7 @@ impl AppState {
 		self.form_field = FormField::Keys;
 		self.form_keys.clear();
 		self.form_interval.clear();
+		self.form_activate.clear();
 	}
 
 	fn submit_form(&mut self) {
@@ -241,8 +274,15 @@ impl AppState {
 					return;
 				};
 
+				let activate = normalize_key_combo(self.form_activate.trim());
+
+				if activate.is_empty() {
+					return;
+				}
+
 				self.clicks.push(Click {
 					keys,
+					activate,
 					interval,
 					active: false,
 				});
@@ -343,9 +383,10 @@ fn format_key_token(token: &str) -> String {
 	}
 
 	if token.chars().count() == 1 {
+		// Preserve the user's letter case for single-character keys
 		let ch = token.chars().next().unwrap();
 		if ch.is_ascii_alphabetic() {
-			return ch.to_ascii_uppercase().to_string();
+			return ch.to_string();
 		}
 	}
 

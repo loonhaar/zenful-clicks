@@ -53,21 +53,26 @@ pub fn render_click_form(
 
 	frame.render_widget(popup, centered_area);
 
-	let chunks = Layout::vertical([Constraint::Length(1), Constraint::Length(1)])
-		.margin(1)
-		.split(inner_area[0]);
+	let chunks = Layout::vertical([
+		Constraint::Length(1),
+		Constraint::Length(1),
+		Constraint::Length(1),
+	])
+	.margin(1)
+	.split(inner_area[0]);
 
 	let keys_focused = app.form_field == FormField::Keys;
 	let interval_focused = app.form_field == FormField::Interval;
+	let activate_focused = app.form_field == FormField::Activate;
 
 	let key_p = Paragraph::new(render_input_line(
 		"Set key: ",
 		&app.form_keys,
 		keys_focused,
 		if keys_focused {
-			Color::Cyan
+			Color::Green
 		} else {
-			Color::Gray
+			Color::Reset
 		},
 	));
 
@@ -76,9 +81,20 @@ pub fn render_click_form(
 		&app.form_interval,
 		interval_focused,
 		if interval_focused {
-			Color::Cyan
+			Color::Green
 		} else {
-			Color::Gray
+			Color::Reset
+		},
+	));
+
+	let activate_p = Paragraph::new(render_input_line(
+		"Activation key: ",
+		&app.form_activate,
+		activate_focused,
+		if activate_focused {
+			Color::Green
+		} else {
+			Color::Reset
 		},
 	));
 
@@ -91,6 +107,7 @@ pub fn render_click_form(
 
 	frame.render_widget(key_p, chunks[0]);
 	frame.render_widget(interval_p, chunks[1]);
+	frame.render_widget(activate_p, chunks[2]);
 	frame.render_widget(cancel, bottom[1]);
 	frame.render_widget(confirm, bottom[2]);
 }

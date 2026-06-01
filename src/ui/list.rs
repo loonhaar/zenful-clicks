@@ -57,14 +57,15 @@ fn make_click_items(app: &AppState, width: usize) -> Vec<ListItem<'_>> {
 			let (status, color) = if c.active {
 				("ACTIVE", Color::Green)
 			} else {
-				("Inactive", Color::Gray)
+				("Inactive", Color::White)
 			};
 			let lines = vec![
-				Line::from(vec![Span::raw("Keys: "), Span::raw(&c.keys)]).fg(Color::Gray),
+				Line::from(vec![Span::raw("Keys: "), Span::raw(&c.keys)]).fg(Color::Reset),
 				Line::from(vec![
-					Span::raw("Interval: ").fg(Color::Gray),
+					Span::raw("Interval: ").fg(Color::Reset),
 					Span::raw(format!("{} ms", c.interval)).fg(Color::Magenta),
 				]),
+				Line::from(vec![Span::raw("Activate: "), Span::raw(&c.activate)]).fg(Color::Reset),
 				Line::from(status).fg(color),
 				Line::from("\n"),
 				Line::from("─".repeat(sep_width)).fg(Color::Yellow),
