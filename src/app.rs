@@ -187,11 +187,11 @@ impl AppState {
 			KeyCode::Null => {
 				if self.form_field == FormField::Keys {
 					if let Some(modifier_combo) = format_modifier_only(modifiers) {
-						self.form_keys.push_str(&modifier_combo);
+						self.form_keys = merge_and_normalize(&self.form_keys, &modifier_combo);
 					}
 				} else if self.form_field == FormField::Activate {
 					if let Some(modifier_combo) = format_modifier_only(modifiers) {
-						self.form_activate.push_str(&modifier_combo);
+						self.form_activate = merge_and_normalize(&self.form_activate, &modifier_combo);
 					}
 				}
 				false
@@ -199,18 +199,18 @@ impl AppState {
 			KeyCode::Modifier(m) => {
 				if self.form_field == FormField::Keys {
 					if let Some(tok) = modifier_token_from_modifier_keycode(m) {
-						self.form_keys.push_str(&tok);
+						self.form_keys = merge_and_normalize(&self.form_keys, &tok);
 					}
 				} else if self.form_field == FormField::Activate {
 					if let Some(tok) = modifier_token_from_modifier_keycode(m) {
-						self.form_activate.push_str(&tok);
+						self.form_activate = merge_and_normalize(&self.form_activate, &tok);
 					}
 				}
 				false
 			}
 			KeyCode::Char(ch) if self.form_field == FormField::Keys => {
 				if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
-					self.form_keys.push_str(&modifier_combo);
+					self.form_keys = merge_and_normalize(&self.form_keys, &modifier_combo);
 				} else {
 					self.form_keys.push(ch);
 				}
@@ -220,7 +220,7 @@ impl AppState {
 				match self.form_field {
 					FormField::Keys => {
 						if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
-							self.form_keys.push_str(&modifier_combo);
+							self.form_keys = merge_and_normalize(&self.form_keys, &modifier_combo);
 						} else {
 							self.form_keys.push(ch);
 						}
@@ -232,7 +232,7 @@ impl AppState {
 					}
 					FormField::Activate => {
 						if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
-							self.form_activate.push_str(&modifier_combo);
+							self.form_activate = merge_and_normalize(&self.form_activate, &modifier_combo);
 						} else {
 							self.form_activate.push(ch);
 						}
@@ -364,17 +364,50 @@ impl AppState {
 }
 
 fn normalize_key_combo(raw: &str) -> String {
-	raw.split('+')
-		.filter_map(|part| {
-			let token = part.trim();
-			if token.is_empty() {
-				return None;
-			}
+	// Collect tokens, dedupe modifier tokens while preserving order, and keep last non-modifier as main key
+	let mut modifiers: Vec<String> = Vec::new();
+	let mut main_key: Option<String> = None;
 
-			Some(format_key_token(token))
-		})
-		.collect::<Vec<String>>()
-		.join("+")
+	for part in raw.split('+') {
+		let token = part.trim();
+		if token.is_empty() {
+			continue;
+		}
+
+		if let Some(mod_name) = normalize_modifier_name(token) {
+			let tok = format!("<{}>", mod_name);
+			if !modifiers.contains(&tok) {
+				modifiers.push(tok);
+			}
+		} else {
+			main_key = Some(format_key_token(token));
+		}
+	}
+
+	let mut out = String::new();
+	if !modifiers.is_empty() {
+		out.push_str(&modifiers.join("+"));
+	}
+	if let Some(k) = main_key {
+		if !out.is_empty() {
+			out.push('+');
+		}
+		out.push_str(&k);
+	}
+
+	out
+}
+
+fn merge_and_normalize(buf: &str, combo: &str) -> String {
+	if buf.trim().is_empty() {
+		return normalize_key_combo(combo);
+	}
+	if combo.trim().is_empty() {
+		return normalize_key_combo(buf);
+	}
+
+	let combined = format!("{}+{}", buf.trim(), combo.trim());
+	normalize_key_combo(&combined)
 }
 
 fn format_key_token(token: &str) -> String {
