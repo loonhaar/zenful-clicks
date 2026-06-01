@@ -65,7 +65,6 @@ impl ToggleController {
 		}
 	}
 }
-
 fn simulate_key_hold(
 	keys: &str,
 	stop_signal: Arc<Mutex<bool>>,

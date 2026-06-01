@@ -10,7 +10,7 @@ pub fn render_tabs(app: &AppState, frame: &mut Frame, area: Rect) {
 	let h_constraints = [Constraint::Fill(1), Constraint::Fill(1)];
 	let inner_layout = Layout::horizontal(h_constraints).split(area);
 
-	let (toggle_color, clicks_color) = match app.focus_pane {
+	let (toggle_color, clicks_color) = match app.active_pane {
 		Pane::Toggles => (Color::Yellow, Color::White),
 		Pane::Clicks => (Color::White, Color::Yellow),
 	};

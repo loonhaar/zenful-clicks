@@ -6,7 +6,11 @@ use ratatui::{
 		event::{self, EnableFocusChange, Event},
 	},
 };
-use std::io::stdout;
+use std::{
+	io::stdout,
+	thread::sleep,
+	time::{Duration, Instant},
+};
 
 mod app;
 mod os_input;
@@ -35,6 +39,15 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 
 		match event::read()? {
 			Event::Key(key) if key.kind == event::KeyEventKind::Press => {
+				let (lock, _cvar) = &*app.focus_signal;
+				let is_focused = *lock.lock().unwrap();
+				let debounce = Duration::from_millis(200);
+
+				if !is_focused || app.focus_regained_time.elapsed() < debounce {
+					sleep(debounce);
+					continue;
+				}
+
 				if app.handle_key(key.code) {
 					break;
 				}
@@ -49,6 +62,7 @@ fn run(mut terminal: DefaultTerminal, app: &mut AppState) -> Result<()> {
 				let (lock, cvar) = &*app.focus_signal;
 				let mut focused = lock.lock().unwrap();
 				*focused = true;
+				app.focus_regained_time = Instant::now();
 				cvar.notify_all();
 			}
 			_ => {}

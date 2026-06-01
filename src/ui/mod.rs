@@ -54,7 +54,7 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 			.title_alignment(HorizontalAlignment::Center)
 			.border_style(Color::Magenta);
 
-		let popup_height = match app.focus_pane {
+		let popup_height = match app.active_pane {
 			Pane::Toggles => 7,
 			Pane::Clicks => 8,
 		};
@@ -66,7 +66,7 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 		// Clear the background for the popup
 		frame.render_widget(Clear, centered_area);
 
-		match app.focus_pane {
+		match app.active_pane {
 			Pane::Toggles => popups::render_toggle_form(frame, popup_block, centered_area, app),
 			Pane::Clicks => popups::render_click_form(frame, popup_block, centered_area, app),
 		}

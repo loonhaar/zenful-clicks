@@ -2,7 +2,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::{Condvar, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use ratatui::{crossterm::event::KeyCode, widgets::ListState};
 
@@ -22,8 +22,9 @@ pub enum Pane {
 
 #[derive(Debug)]
 pub struct AppState {
-	pub focus_pane: Pane,
+	pub active_pane: Pane,
 	pub focus_signal: Arc<(Mutex<bool>, Condvar)>,
+	pub focus_regained_time: Instant,
 	pub show_add_form: bool,
 	pub show_delete_confirm: bool,
 	pub form_field: FormField,
@@ -51,8 +52,9 @@ pub struct Click {
 impl Default for AppState {
 	fn default() -> Self {
 		Self {
-			focus_pane: Pane::Toggles,
+			active_pane: Pane::Toggles,
 			focus_signal: Arc::new((Mutex::new(true), Condvar::new())),
+			focus_regained_time: Instant::now(),
 			show_add_form: false,
 			show_delete_confirm: false,
 			form_field: FormField::Keys,
@@ -76,46 +78,44 @@ impl AppState {
 			return self.handle_delete_confirm_key(code);
 		}
 
+		let mut quit_application = false;
+
 		match code {
-			KeyCode::Char('Q') => true,
+			KeyCode::Char('Q') => {
+				quit_application = true;
+			}
 			KeyCode::Char('H') => {
 				// TODO: display a help popup that explains keybinds
-				false
 			}
 			KeyCode::Char('h') | KeyCode::Char('t') => {
-				self.focus_pane = Pane::Toggles;
-				false
+				self.active_pane = Pane::Toggles;
 			}
 			KeyCode::Char('j') => {
 				self.list_state.borrow_mut().select_next();
-				false
 			}
 			KeyCode::Char('k') => {
 				self.list_state.borrow_mut().select_previous();
-				false
 			}
 			KeyCode::Char('l') | KeyCode::Char('c') => {
-				self.focus_pane = Pane::Clicks;
-				false
+				self.active_pane = Pane::Clicks;
 			}
 			KeyCode::Char('a') => {
 				self.show_add_form = true;
 				self.form_field = FormField::Keys;
 				self.form_keys.clear();
 				self.form_interval.clear();
-				false
 			}
 			KeyCode::Char('D') => {
 				self.request_delete_selected();
-				false
 			}
 			KeyCode::Enter => {
 				self.toggle_status();
-
-				false
 			}
-			_ => false,
+			KeyCode::F(8) => {}
+			_ => {}
 		}
+
+		quit_application
 	}
 
 	fn handle_delete_confirm_key(&mut self, code: KeyCode) -> bool {
@@ -144,7 +144,7 @@ impl AppState {
 				false
 			}
 			KeyCode::Tab => {
-				if self.focus_pane == Pane::Clicks {
+				if self.active_pane == Pane::Clicks {
 					self.form_field = match self.form_field {
 						FormField::Keys => FormField::Interval,
 						FormField::Interval => FormField::Keys,
@@ -192,7 +192,7 @@ impl AppState {
 			return;
 		}
 
-		match self.focus_pane {
+		match self.active_pane {
 			Pane::Toggles => {
 				self.toggles.push(Toggle {
 					keys,
@@ -222,7 +222,7 @@ impl AppState {
 	fn delete_selected(&mut self) {
 		let index = self.list_state.borrow().selected();
 		if let Some(i) = index {
-			match self.focus_pane {
+			match self.active_pane {
 				Pane::Toggles => {
 					if i < self.toggles.len() {
 						self.toggle_controller.stop_toggle(i);
@@ -265,7 +265,7 @@ impl AppState {
 		let index = self.list_state.borrow().selected();
 
 		if let Some(i) = index {
-			match self.focus_pane {
+			match self.active_pane {
 				Pane::Toggles => {
 					if let Some(t) = self.toggles.get_mut(i) {
 						t.active = !t.active;

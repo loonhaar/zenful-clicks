@@ -107,7 +107,7 @@ pub fn render_delete_confirm(
 
 	frame.render_widget(popup, centered_area);
 
-	let message = match app.focus_pane {
+	let message = match app.active_pane {
 		crate::app::Pane::Toggles => "This will delete the selected toggle.",
 		crate::app::Pane::Clicks => "This will delete the selected click.",
 	};

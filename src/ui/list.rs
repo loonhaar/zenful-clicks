@@ -15,7 +15,7 @@ pub fn render_list(app: &AppState, frame: &mut Frame, area: Rect) {
 		.split(area);
 	let list_area = layout[0];
 
-	let list_items: Vec<ListItem> = match app.focus_pane {
+	let list_items: Vec<ListItem> = match app.active_pane {
 		Pane::Toggles => make_toggle_items(app, list_area.width as usize),
 		Pane::Clicks => make_click_items(app, list_area.width as usize),
 	};
