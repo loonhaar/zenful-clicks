@@ -20,6 +20,9 @@ use std::{
 };
 
 mod app;
+mod actions;
+mod handlers;
+mod key_parser;
 mod os_input;
 mod ui;
 
