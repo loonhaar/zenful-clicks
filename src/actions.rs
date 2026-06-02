@@ -1,4 +1,4 @@
-use crate::app::{AppState, Click, FormField, Pane, Toggle};
+use crate::appstate::{AppState, Click, FormField, Pane, Toggle};
 use crate::key_parser::normalize_key_combo;
 
 pub fn start_add_form(app: &mut AppState) {
@@ -46,7 +46,7 @@ pub fn submit_form(app: &mut AppState) {
 			}
 
 			app.clicks.push(Click {
-				keys,
+				key: keys,
 				activate,
 				interval,
 				active: false,
@@ -81,6 +81,7 @@ pub fn delete_selected(app: &mut AppState) {
 			Pane::Clicks => {
 				if i < app.clicks.len() {
 					app.clicks.remove(i);
+					app.click_controller.stop_click(i);
 					let len = app.clicks.len();
 					if len == 0 {
 						app.list_state.borrow_mut().select(None);
@@ -88,6 +89,7 @@ pub fn delete_selected(app: &mut AppState) {
 						let new = if i >= len { len - 1 } else { i };
 						app.list_state.borrow_mut().select(Some(new));
 					}
+					app.click_controller.remove_index(i);
 				}
 			}
 		}
@@ -120,7 +122,15 @@ pub fn toggle_status(app: &mut AppState) {
 			}
 			Pane::Clicks => {
 				if let Some(c) = app.clicks.get_mut(i) {
-					c.active = !c.active
+					c.active = !c.active;
+					if c.active {
+						let key = c.key.clone();
+						let interval = c.interval;
+						app.click_controller
+							.start_click(i, key, interval, &app.focus_signal);
+					} else {
+						app.click_controller.stop_click(i);
+					}
 				}
 			}
 		}

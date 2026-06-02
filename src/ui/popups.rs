@@ -8,7 +8,7 @@ use ratatui::{
 	widgets::{Block, Padding, Paragraph},
 };
 
-use crate::app::{AppState, FormField};
+use crate::appstate::{AppState, FormField};
 
 pub fn render_toggle_form(
 	frame: &mut Frame,
@@ -125,8 +125,8 @@ pub fn render_delete_confirm(
 	frame.render_widget(popup, centered_area);
 
 	let message = match app.active_pane {
-		crate::app::Pane::Toggles => "This will delete the selected toggle.",
-		crate::app::Pane::Clicks => "This will delete the selected click.",
+		crate::appstate::Pane::Toggles => "This will delete the selected toggle.",
+		crate::appstate::Pane::Clicks => "This will delete the selected click.",
 	};
 
 	let body = Paragraph::new(message)

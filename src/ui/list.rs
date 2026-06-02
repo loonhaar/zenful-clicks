@@ -6,7 +6,7 @@ use ratatui::{
 	widgets::{List, ListItem},
 };
 
-use crate::app::{AppState, Pane};
+use crate::appstate::{AppState, Pane};
 
 pub fn render_list(app: &AppState, frame: &mut Frame, area: Rect) {
 	let pointer = ">> ";
@@ -60,7 +60,7 @@ fn make_click_items(app: &AppState, width: usize) -> Vec<ListItem<'_>> {
 				("Inactive", Color::White)
 			};
 			let lines = vec![
-				Line::from(vec![Span::raw("Keys: "), Span::raw(&c.keys)]).fg(Color::Reset),
+				Line::from(vec![Span::raw("Keys: "), Span::raw(&c.key)]).fg(Color::Reset),
 				Line::from(vec![
 					Span::raw("Interval: ").fg(Color::Reset),
 					Span::raw(format!("{} ms", c.interval)).fg(Color::Magenta),

@@ -4,10 +4,7 @@ use std::sync::{Condvar, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use ratatui::{
-	crossterm::event::KeyEvent,
-	widgets::ListState,
-};
+use ratatui::{crossterm::event::KeyEvent, widgets::ListState};
 
 #[derive(Debug, Default, PartialEq, Clone, Copy)]
 pub enum FormField {
@@ -39,6 +36,7 @@ pub struct AppState {
 	pub clicks: Vec<Click>,
 	pub list_state: RefCell<ListState>,
 	pub toggle_controller: crate::os_input::ToggleController,
+	pub click_controller: crate::os_input::ClickController,
 }
 
 #[derive(Debug)]
@@ -49,7 +47,7 @@ pub struct Toggle {
 
 #[derive(Debug)]
 pub struct Click {
-	pub keys: String,
+	pub key: String,
 	pub activate: String,
 	pub interval: u32,
 	pub active: bool,
@@ -71,6 +69,7 @@ impl Default for AppState {
 			clicks: Vec::new(),
 			list_state: RefCell::new(ListState::default()),
 			toggle_controller: crate::os_input::ToggleController::new(),
+			click_controller: crate::os_input::ClickController::new(),
 		}
 	}
 }
@@ -84,6 +83,7 @@ impl AppState {
 impl Drop for AppState {
 	fn drop(&mut self) {
 		self.toggle_controller.shutdown();
+		self.click_controller.shutdown();
 		thread::sleep(Duration::from_millis(100));
 	}
 }

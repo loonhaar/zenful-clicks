@@ -10,7 +10,7 @@ mod list;
 mod popups;
 mod tabs;
 
-use crate::app::{AppState, Pane};
+use crate::appstate::{AppState, Pane};
 
 pub fn render(frame: &mut Frame, app: &AppState) {
 	let (lock, _cvar) = &*app.focus_signal;
@@ -63,7 +63,6 @@ pub fn render(frame: &mut Frame, app: &AppState) {
 			.area()
 			.centered(Constraint::Length(45), Constraint::Length(popup_height));
 
-		// Clear the background for the popup
 		frame.render_widget(Clear, centered_area);
 
 		match app.active_pane {

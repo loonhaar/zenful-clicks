@@ -1,6 +1,6 @@
 use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::app::{AppState, FormField, Pane};
+use crate::appstate::{AppState, FormField, Pane};
 use crate::key_parser::{
 	format_modifier_combo, format_modifier_only, merge_and_normalize,
 	modifier_token_from_modifier_keycode,
@@ -143,7 +143,8 @@ fn handle_form_key(app: &mut AppState, event: KeyEvent) -> bool {
 				}
 				FormField::Activate => {
 					if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
-						app.form_activate = merge_and_normalize(&app.form_activate, &modifier_combo);
+						app.form_activate =
+							merge_and_normalize(&app.form_activate, &modifier_combo);
 					} else {
 						app.form_activate.push(ch);
 					}

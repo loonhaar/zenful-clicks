@@ -1,17 +1,13 @@
 use color_eyre::eyre::{Ok, Result};
 use ratatui::{
-		DefaultTerminal,
-		crossterm::{
-			ExecutableCommand,
-			event::{
-				self,
-				EnableFocusChange,
-				Event,
-				PushKeyboardEnhancementFlags,
-				PopKeyboardEnhancementFlags,
-				KeyboardEnhancementFlags,
-			},
+	DefaultTerminal,
+	crossterm::{
+		ExecutableCommand,
+		event::{
+			self, EnableFocusChange, Event, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags,
+			PushKeyboardEnhancementFlags,
 		},
+	},
 };
 use std::{
 	io::stdout,
@@ -19,14 +15,14 @@ use std::{
 	time::{Duration, Instant},
 };
 
-mod app;
 mod actions;
+mod appstate;
 mod handlers;
 mod key_parser;
 mod os_input;
 mod ui;
 
-use app::AppState;
+use appstate::AppState;
 
 fn main() -> Result<()> {
 	let mut app = AppState::default();
