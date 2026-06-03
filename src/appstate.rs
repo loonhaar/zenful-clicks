@@ -11,7 +11,6 @@ pub enum FormField {
 	#[default]
 	Keys,
 	Interval,
-	Activate,
 }
 
 #[derive(Debug, Default, PartialEq, Clone, Copy)]
@@ -31,7 +30,6 @@ pub struct AppState {
 	pub form_field: FormField,
 	pub form_keys: String,
 	pub form_interval: String,
-	pub form_activate: String,
 	pub toggles: Vec<Toggle>,
 	pub clicks: Vec<Click>,
 	pub list_state: RefCell<ListState>,
@@ -48,7 +46,6 @@ pub struct Toggle {
 #[derive(Debug)]
 pub struct Click {
 	pub key: String,
-	pub activate: String,
 	pub interval: u32,
 	pub active: bool,
 }
@@ -64,7 +61,6 @@ impl Default for AppState {
 			form_field: FormField::Keys,
 			form_keys: String::new(),
 			form_interval: String::new(),
-			form_activate: String::new(),
 			toggles: Vec::new(),
 			clicks: Vec::new(),
 			list_state: RefCell::new(ListState::default()),

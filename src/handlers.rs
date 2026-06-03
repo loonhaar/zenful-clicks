@@ -51,7 +51,6 @@ pub fn handle_key(app: &mut AppState, event: KeyEvent) -> bool {
 		KeyCode::Enter => {
 			crate::actions::toggle_status(app);
 		}
-		KeyCode::F(8) => {}
 		_ => {}
 	}
 
@@ -75,8 +74,7 @@ fn handle_form_key(app: &mut AppState, event: KeyEvent) -> bool {
 			if app.active_pane == Pane::Clicks {
 				app.form_field = match app.form_field {
 					FormField::Keys => FormField::Interval,
-					FormField::Interval => FormField::Activate,
-					FormField::Activate => FormField::Keys,
+					FormField::Interval => FormField::Keys,
 				};
 			}
 			false
@@ -89,33 +87,18 @@ fn handle_form_key(app: &mut AppState, event: KeyEvent) -> bool {
 				FormField::Interval => {
 					app.form_interval.pop();
 				}
-				FormField::Activate => {
-					app.form_activate.pop();
-				}
 			}
 			false
 		}
 		KeyCode::Null => {
-			if app.form_field == FormField::Keys {
-				if let Some(modifier_combo) = format_modifier_only(modifiers) {
-					app.form_keys = merge_and_normalize(&app.form_keys, &modifier_combo);
-				}
-			} else if app.form_field == FormField::Activate {
-				if let Some(modifier_combo) = format_modifier_only(modifiers) {
-					app.form_activate = merge_and_normalize(&app.form_activate, &modifier_combo);
-				}
+			if let Some(modifier_combo) = format_modifier_only(modifiers) {
+				app.form_keys = merge_and_normalize(&app.form_keys, &modifier_combo);
 			}
 			false
 		}
 		KeyCode::Modifier(m) => {
-			if app.form_field == FormField::Keys {
-				if let Some(tok) = modifier_token_from_modifier_keycode(m) {
-					app.form_keys = merge_and_normalize(&app.form_keys, &tok);
-				}
-			} else if app.form_field == FormField::Activate {
-				if let Some(tok) = modifier_token_from_modifier_keycode(m) {
-					app.form_activate = merge_and_normalize(&app.form_activate, &tok);
-				}
+			if let Some(tok) = modifier_token_from_modifier_keycode(m) {
+				app.form_keys = merge_and_normalize(&app.form_keys, &tok);
 			}
 			false
 		}
@@ -139,14 +122,6 @@ fn handle_form_key(app: &mut AppState, event: KeyEvent) -> bool {
 				FormField::Interval => {
 					if ch.is_ascii_digit() {
 						app.form_interval.push(ch);
-					}
-				}
-				FormField::Activate => {
-					if let Some(modifier_combo) = format_modifier_combo(modifiers, ch) {
-						app.form_activate =
-							merge_and_normalize(&app.form_activate, &modifier_combo);
-					} else {
-						app.form_activate.push(ch);
 					}
 				}
 			}

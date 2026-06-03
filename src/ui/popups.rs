@@ -17,7 +17,7 @@ pub fn render_toggle_form(
 	app: &AppState,
 ) {
 	let popup = popup_block.title(" Add a new toggle ");
-	let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+	let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(2)])
 		.split(popup.inner(centered_area));
 
 	frame.render_widget(popup, centered_area);
@@ -48,22 +48,17 @@ pub fn render_click_form(
 	app: &AppState,
 ) {
 	let popup = popup_block.title(" Add a new click ");
-	let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)])
+	let inner_area = Layout::vertical([Constraint::Fill(1), Constraint::Length(2)])
 		.split(popup.inner(centered_area));
 
 	frame.render_widget(popup, centered_area);
 
-	let chunks = Layout::vertical([
-		Constraint::Length(1),
-		Constraint::Length(1),
-		Constraint::Length(1),
-	])
-	.margin(1)
-	.split(inner_area[0]);
+	let chunks = Layout::vertical([Constraint::Length(1), Constraint::Length(1)])
+		.margin(1)
+		.split(inner_area[0]);
 
 	let keys_focused = app.form_field == FormField::Keys;
 	let interval_focused = app.form_field == FormField::Interval;
-	let activate_focused = app.form_field == FormField::Activate;
 
 	let key_p = Paragraph::new(render_input_line(
 		"Set key: ",
@@ -87,17 +82,6 @@ pub fn render_click_form(
 		},
 	));
 
-	let activate_p = Paragraph::new(render_input_line(
-		"Activation key: ",
-		&app.form_activate,
-		activate_focused,
-		if activate_focused {
-			Color::Green
-		} else {
-			Color::Reset
-		},
-	));
-
 	let bottom = layout_popup_buttons(inner_area[1]);
 
 	let cancel = Paragraph::new("[Esc] Cancel   ")
@@ -107,7 +91,6 @@ pub fn render_click_form(
 
 	frame.render_widget(key_p, chunks[0]);
 	frame.render_widget(interval_p, chunks[1]);
-	frame.render_widget(activate_p, chunks[2]);
 	frame.render_widget(cancel, bottom[1]);
 	frame.render_widget(confirm, bottom[2]);
 }

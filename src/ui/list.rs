@@ -65,7 +65,6 @@ fn make_click_items(app: &AppState, width: usize) -> Vec<ListItem<'_>> {
 					Span::raw("Interval: ").fg(Color::Reset),
 					Span::raw(format!("{} ms", c.interval)).fg(Color::Magenta),
 				]),
-				Line::from(vec![Span::raw("Activate: "), Span::raw(&c.activate)]).fg(Color::Reset),
 				Line::from(status).fg(color),
 				Line::from("\n"),
 				Line::from("─".repeat(sep_width)).fg(Color::Yellow),

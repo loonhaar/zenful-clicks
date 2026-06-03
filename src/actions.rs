@@ -6,7 +6,6 @@ pub fn start_add_form(app: &mut AppState) {
 	app.form_field = FormField::Keys;
 	app.form_keys.clear();
 	app.form_interval.clear();
-	app.form_activate.clear();
 }
 
 pub fn discard_form(app: &mut AppState) {
@@ -14,7 +13,6 @@ pub fn discard_form(app: &mut AppState) {
 	app.form_field = FormField::Keys;
 	app.form_keys.clear();
 	app.form_interval.clear();
-	app.form_activate.clear();
 }
 
 pub fn submit_form(app: &mut AppState) {
@@ -39,15 +37,8 @@ pub fn submit_form(app: &mut AppState) {
 				return;
 			};
 
-			let activate = normalize_key_combo(app.form_activate.trim());
-
-			if activate.is_empty() {
-				return;
-			}
-
 			app.clicks.push(Click {
 				key: keys,
-				activate,
 				interval,
 				active: false,
 			});
