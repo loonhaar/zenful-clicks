@@ -35,8 +35,8 @@ pub struct AppState {
 	pub toggles: Vec<Toggle>,
 	pub clicks: Vec<Click>,
 	pub list_state: RefCell<ListState>,
-	pub toggle_controller: crate::os_input::ToggleController,
-	pub click_controller: crate::os_input::ClickController,
+	pub toggle_controller: crate::os_input::OsInputManager,
+	pub click_controller: crate::os_input::OsInputManager,
 }
 
 #[derive(Debug)]
@@ -68,8 +68,8 @@ impl Default for AppState {
 			toggles: Vec::new(),
 			clicks: Vec::new(),
 			list_state: RefCell::new(ListState::default()),
-			toggle_controller: crate::os_input::ToggleController::new(),
-			click_controller: crate::os_input::ClickController::new(),
+			toggle_controller: crate::os_input::OsInputManager::new(),
+			click_controller: crate::os_input::OsInputManager::new(),
 		}
 	}
 }

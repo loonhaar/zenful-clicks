@@ -75,7 +75,7 @@ pub fn delete_selected(app: &mut AppState) {
 						app.list_state.borrow_mut().select(Some(new));
 					}
 
-					app.toggle_controller.remove_index(i);
+					app.toggle_controller.remove_toggle_index(i);
 				}
 			}
 			Pane::Clicks => {
@@ -89,7 +89,7 @@ pub fn delete_selected(app: &mut AppState) {
 						let new = if i >= len { len - 1 } else { i };
 						app.list_state.borrow_mut().select(Some(new));
 					}
-					app.click_controller.remove_index(i);
+					app.click_controller.remove_click_index(i);
 				}
 			}
 		}
