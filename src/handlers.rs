@@ -32,6 +32,7 @@ pub fn handle_key(app: &mut AppState, event: KeyEvent) -> bool {
 		}
 		KeyCode::Char('h') | KeyCode::Char('t') => {
 			app.active_pane = Pane::Toggles;
+			app.save_config();
 		}
 		KeyCode::Char('j') => {
 			app.list_state.borrow_mut().select_next();
@@ -41,6 +42,7 @@ pub fn handle_key(app: &mut AppState, event: KeyEvent) -> bool {
 		}
 		KeyCode::Char('l') | KeyCode::Char('c') => {
 			app.active_pane = Pane::Clicks;
+			app.save_config();
 		}
 		KeyCode::Char('a') => {
 			crate::actions::start_add_form(app);

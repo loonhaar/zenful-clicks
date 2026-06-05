@@ -47,6 +47,8 @@ pub fn submit_form(app: &mut AppState) {
 			discard_form(app);
 		}
 	}
+
+	app.save_config();
 }
 
 pub fn delete_selected(app: &mut AppState) {
@@ -84,6 +86,8 @@ pub fn delete_selected(app: &mut AppState) {
 				}
 			}
 		}
+
+		app.save_config();
 	}
 }
 
