@@ -7,6 +7,8 @@ use crate::key_parser::{
 };
 
 pub fn handle_key(app: &mut AppState, event: KeyEvent) -> bool {
+	let mut quit_application = false;
+
 	let code = event.code;
 	let modifiers = event.modifiers;
 
@@ -18,7 +20,9 @@ pub fn handle_key(app: &mut AppState, event: KeyEvent) -> bool {
 		return handle_delete_confirm_key(app, code);
 	}
 
-	let mut quit_application = false;
+	if app.show_help {
+		return handle_help_key(app, code);
+	}
 
 	match code {
 		KeyCode::Char('q') if modifiers.contains(KeyModifiers::SHIFT) => {
@@ -28,7 +32,7 @@ pub fn handle_key(app: &mut AppState, event: KeyEvent) -> bool {
 			quit_application = true;
 		}
 		KeyCode::Char('h') if modifiers.contains(KeyModifiers::SHIFT) => {
-			// TODO: display a help popup that explains keybinds
+			app.show_help = true;
 		}
 		KeyCode::Char('h') | KeyCode::Char('t') => {
 			app.active_pane = Pane::Toggles;
@@ -146,4 +150,17 @@ fn handle_delete_confirm_key(app: &mut AppState, code: KeyCode) -> bool {
 		}
 		_ => false,
 	}
+}
+
+fn handle_help_key(app: &mut AppState, code: KeyCode) -> bool {
+	match code {
+		KeyCode::Down | KeyCode::Char('j') => {
+			app.help_scroll = app.help_scroll.saturating_add(1);
+		}
+		KeyCode::Up | KeyCode::Char('k') => {
+			app.help_scroll = app.help_scroll.saturating_sub(1);
+		}
+		_ => app.show_help = false,
+	}
+	return false;
 }

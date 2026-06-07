@@ -109,6 +109,8 @@ pub struct AppState {
 	pub focus_regained_time: Instant,
 	pub show_add_form: bool,
 	pub show_delete_confirm: bool,
+	pub show_help: bool,
+	pub help_scroll: u16,
 	pub form_field: FormField,
 	pub form_keys: String,
 	pub form_interval: String,
@@ -121,24 +123,12 @@ pub struct AppState {
 
 impl Default for AppState {
 	fn default() -> Self {
-		// TODO: check if config file exists
-		// if yes import vectors if no Vec::new()
-		// probably best to import all as inactive
-		// ...
 		let saved_config = AppConfig::load();
 
-		let active_pane = saved_config
-			.as_ref()
-			.map(|c| c.active_pane)
-			.unwrap_or(Pane::Toggles);
-		let toggles = saved_config
-			.as_ref()
-			.map(|c| c.toggles.clone())
-			.unwrap_or_default();
-		let clicks = saved_config
-			.as_ref()
-			.map(|c| c.clicks.clone())
-			.unwrap_or_default();
+		let (active_pane, toggles, clicks, show_help) = match saved_config {
+			Some(config) => (config.active_pane, config.toggles, config.clicks, false),
+			None => (Pane::Toggles, Vec::new(), Vec::new(), true),
+		};
 
 		Self {
 			active_pane,
@@ -146,6 +136,8 @@ impl Default for AppState {
 			focus_regained_time: Instant::now(),
 			show_add_form: false,
 			show_delete_confirm: false,
+			show_help,
+			help_scroll: 0,
 			form_field: FormField::Keys,
 			form_keys: String::new(),
 			form_interval: String::new(),
